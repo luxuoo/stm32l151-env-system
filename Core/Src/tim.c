@@ -1,131 +1,272 @@
+/* USER CODE BEGIN Header */
 /**
-  * @file  tim.c
-  * @brief Timer initialization using direct register access (no HAL TIM)
+  ******************************************************************************
+  * @file    tim.c
+  * @brief   This file provides code for the configuration
+  *          of the TIM instances.
+  ******************************************************************************
+  * @attention
   *
-  * TIM2 CH4 (PA3)  — PWM 1 kHz for LED (low-active)
-  * TIM6             — 10 ms dimming tick
-  * TIM7             — 1 s sensor read tick
+  * Copyright (c) 2026 STMicroelectronics.
+  * All rights reserved.
+  *
+  * This software is licensed under terms that can be found in the LICENSE file
+  * in the root directory of this software component.
+  * If no LICENSE file comes with this software, it is provided AS-IS.
+  *
+  ******************************************************************************
   */
-
+/* USER CODE END Header */
+/* Includes ------------------------------------------------------------------*/
 #include "tim.h"
-#include "stm32l1xx.h"
 
-/* ---- Timer handles (for compatibility) ---- */
-TIM_TypeDef *TIM2_INST = TIM2;
-TIM_TypeDef *TIM6_INST = TIM6;
-TIM_TypeDef *TIM7_INST = TIM7;
+/* USER CODE BEGIN 0 */
 
-volatile uint8_t g_dim_flag  = 0;
-volatile uint8_t g_read_flag = 0;
+/* USER CODE END 0 */
 
-/* =========================================================
- *  TIM2 CH4 PWM — PA3 (LED, low-active)
- *  32 MHz / 32 / 1000 = 1 kHz
- *  PWM Mode 2: output LOW when CNT < CCR4 → LED ON
- * ========================================================= */
+TIM_HandleTypeDef htim2;
+TIM_HandleTypeDef htim6;
+TIM_HandleTypeDef htim7;
+
+/* TIM2 init function */
 void MX_TIM2_Init(void)
 {
-    /* Enable clocks */
-    RCC->AHBENR  |= RCC_AHBENR_GPIOAEN;
-    RCC->APB1ENR |= RCC_APB1ENR_TIM2EN;
 
-    /* PA3 → AF1 (TIM2_CH4) */
-    GPIOA->MODER   &= ~(3u << (3 * 2));
-    GPIOA->MODER   |=  (2u << (3 * 2));   /* Alternate function */
-    GPIOA->OTYPER  &= ~(1u << 3);         /* Push-pull */
-    GPIOA->OSPEEDR &= ~(3u << (3 * 2));
-    GPIOA->OSPEEDR |=  (1u << (3 * 2));   /* Medium speed */
-    GPIOA->PUPDR   &= ~(3u << (3 * 2));   /* No pull */
-    GPIOA->AFR[0]  &= ~(0xFu << (3 * 4));
-    GPIOA->AFR[0]  |=  (1u   << (3 * 4)); /* AF1 = TIM2 */
+  /* USER CODE BEGIN TIM2_Init 0 */
 
-    /* Timer configuration */
-    TIM2->PSC  = 31;          /* 32 MHz / 32 = 1 MHz */
-    TIM2->ARR  = 999;         /* 1 MHz / 1000 = 1 kHz */
-    TIM2->CCR4 = 999;         /* Start with LED off */
+  /* USER CODE END TIM2_Init 0 */
 
-    /* CCMR2: OC4M = 110 (PWM mode 2), OC4PE enable */
-    TIM2->CCMR2 &= ~TIM_CCMR2_OC4M;
-    TIM2->CCMR2 |=  (6u << TIM_CCMR2_OC4M_Pos);  /* PWM mode 2 */
-    TIM2->CCMR2 |=  TIM_CCMR2_OC4PE;              /* Preload enable */
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+  TIM_OC_InitTypeDef sConfigOC = {0};
 
-    /* CCER: Enable CH4 output (CC4P=0 → active high, but PWM2 inverts) */
-    TIM2->CCER &= ~TIM_CCER_CC4P;
-    TIM2->CCER |=  TIM_CCER_CC4E;
+  /* USER CODE BEGIN TIM2_Init 1 */
 
-    /* EGR: Generate update event to load PSC/ARR */
-    TIM2->EGR = TIM_EGR_UG;
-    /* Clear update flag */
-    TIM2->SR &= ~TIM_SR_UIF;
+  /* USER CODE END TIM2_Init 1 */
+  htim2.Instance = TIM2;
+  htim2.Init.Prescaler = 31;
+  htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim2.Init.Period = 999;
+  htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
+  if (HAL_TIM_PWM_Init(&htim2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim2, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sConfigOC.OCMode = TIM_OCMODE_PWM1;
+  sConfigOC.Pulse = 999;
+  sConfigOC.OCPolarity = TIM_OCPOLARITY_LOW;
+  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
+  if (HAL_TIM_PWM_ConfigChannel(&htim2, &sConfigOC, TIM_CHANNEL_4) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM2_Init 2 */
+
+  /* USER CODE END TIM2_Init 2 */
+  HAL_TIM_MspPostInit(&htim2);
+
 }
-
-void TIM2_PWM_Start(void)
-{
-    TIM2->CR1 |= TIM_CR1_CEN;
-}
-
-void TIM2_PWM_Stop(void)
-{
-    TIM2->CR1 &= ~TIM_CR1_CEN;
-    TIM2->CCR4 = 999;  /* LED off */
-}
-
-/* =========================================================
- *  TIM6 — 10 ms dimming tick
- *  32 MHz / 3200 / 100 = 100 Hz → 10 ms
- * ========================================================= */
+/* TIM6 init function */
 void MX_TIM6_Init(void)
 {
-    RCC->APB1ENR |= RCC_APB1ENR_TIM6EN;
 
-    TIM6->PSC  = 3199;
-    TIM6->ARR  = 99;
-    TIM6->DIER = TIM_DIER_UIE;   /* Update interrupt enable */
-    TIM6->EGR  = TIM_EGR_UG;
-    TIM6->SR  &= ~TIM_SR_UIF;
+  /* USER CODE BEGIN TIM6_Init 0 */
 
-    /* NVIC: TIM6 IRQ = 54 */
-    NVIC_SetPriority(TIM6_IRQn, 3);
-    NVIC_EnableIRQ(TIM6_IRQn);
+  /* USER CODE END TIM6_Init 0 */
+
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+
+  /* USER CODE BEGIN TIM6_Init 1 */
+
+  /* USER CODE END TIM6_Init 1 */
+  htim6.Instance = TIM6;
+  htim6.Init.Prescaler = 31999;
+  htim6.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim6.Init.Period = 999;
+  htim6.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
+  if (HAL_TIM_Base_Init(&htim6) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim6, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM6_Init 2 */
+
+  /* USER CODE END TIM6_Init 2 */
+
 }
-
-void TIM6_Start(void)
-{
-    TIM6->SR  &= ~TIM_SR_UIF;
-    TIM6->CR1 |=  TIM_CR1_CEN;
-}
-
-void TIM6_Stop(void)
-{
-    TIM6->CR1 &= ~TIM_CR1_CEN;
-}
-
-/* =========================================================
- *  TIM7 — ~1 s sensor read tick
- *  32 MHz / 32000 / 1000 = 1 Hz → 1 s
- * ========================================================= */
+/* TIM7 init function */
 void MX_TIM7_Init(void)
 {
-    RCC->APB1ENR |= RCC_APB1ENR_TIM7EN;
 
-    TIM7->PSC  = 31999;
-    TIM7->ARR  = 999;
-    TIM7->DIER = TIM_DIER_UIE;   /* Update interrupt enable */
-    TIM7->EGR  = TIM_EGR_UG;
-    TIM7->SR  &= ~TIM_SR_UIF;
+  /* USER CODE BEGIN TIM7_Init 0 */
 
-    /* NVIC: TIM7 IRQ = 55 */
-    NVIC_SetPriority(TIM7_IRQn, 3);
-    NVIC_EnableIRQ(TIM7_IRQn);
+  /* USER CODE END TIM7_Init 0 */
+
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+
+  /* USER CODE BEGIN TIM7_Init 1 */
+
+  /* USER CODE END TIM7_Init 1 */
+  htim7.Instance = TIM7;
+  htim7.Init.Prescaler = 31999;
+  htim7.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim7.Init.Period = 999;
+  htim7.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
+  if (HAL_TIM_Base_Init(&htim7) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim7, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM7_Init 2 */
+
+  /* USER CODE END TIM7_Init 2 */
+
 }
 
-void TIM7_Start(void)
+void HAL_TIM_PWM_MspInit(TIM_HandleTypeDef* tim_pwmHandle)
 {
-    TIM7->SR  &= ~TIM_SR_UIF;
-    TIM7->CR1 |=  TIM_CR1_CEN;
+
+  if(tim_pwmHandle->Instance==TIM2)
+  {
+  /* USER CODE BEGIN TIM2_MspInit 0 */
+
+  /* USER CODE END TIM2_MspInit 0 */
+    /* TIM2 clock enable */
+    __HAL_RCC_TIM2_CLK_ENABLE();
+  /* USER CODE BEGIN TIM2_MspInit 1 */
+
+  /* USER CODE END TIM2_MspInit 1 */
+  }
 }
 
-void TIM7_Stop(void)
+void HAL_TIM_Base_MspInit(TIM_HandleTypeDef* tim_baseHandle)
 {
-    TIM7->CR1 &= ~TIM_CR1_CEN;
+
+  if(tim_baseHandle->Instance==TIM6)
+  {
+  /* USER CODE BEGIN TIM6_MspInit 0 */
+
+  /* USER CODE END TIM6_MspInit 0 */
+    /* TIM6 clock enable */
+    __HAL_RCC_TIM6_CLK_ENABLE();
+
+    /* TIM6 interrupt Init */
+    HAL_NVIC_SetPriority(TIM6_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(TIM6_IRQn);
+  /* USER CODE BEGIN TIM6_MspInit 1 */
+
+  /* USER CODE END TIM6_MspInit 1 */
+  }
+  else if(tim_baseHandle->Instance==TIM7)
+  {
+  /* USER CODE BEGIN TIM7_MspInit 0 */
+
+  /* USER CODE END TIM7_MspInit 0 */
+    /* TIM7 clock enable */
+    __HAL_RCC_TIM7_CLK_ENABLE();
+
+    /* TIM7 interrupt Init */
+    HAL_NVIC_SetPriority(TIM7_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(TIM7_IRQn);
+  /* USER CODE BEGIN TIM7_MspInit 1 */
+
+  /* USER CODE END TIM7_MspInit 1 */
+  }
 }
+void HAL_TIM_MspPostInit(TIM_HandleTypeDef* timHandle)
+{
+
+  GPIO_InitTypeDef GPIO_InitStruct = {0};
+  if(timHandle->Instance==TIM2)
+  {
+  /* USER CODE BEGIN TIM2_MspPostInit 0 */
+
+  /* USER CODE END TIM2_MspPostInit 0 */
+
+    __HAL_RCC_GPIOA_CLK_ENABLE();
+    /**TIM2 GPIO Configuration
+    PA3     ------> TIM2_CH4
+    */
+    GPIO_InitStruct.Pin = GPIO_PIN_3;
+    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+    GPIO_InitStruct.Alternate = GPIO_AF1_TIM2;
+    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  /* USER CODE BEGIN TIM2_MspPostInit 1 */
+
+  /* USER CODE END TIM2_MspPostInit 1 */
+  }
+
+}
+
+void HAL_TIM_PWM_MspDeInit(TIM_HandleTypeDef* tim_pwmHandle)
+{
+
+  if(tim_pwmHandle->Instance==TIM2)
+  {
+  /* USER CODE BEGIN TIM2_MspDeInit 0 */
+
+  /* USER CODE END TIM2_MspDeInit 0 */
+    /* Peripheral clock disable */
+    __HAL_RCC_TIM2_CLK_DISABLE();
+  /* USER CODE BEGIN TIM2_MspDeInit 1 */
+
+  /* USER CODE END TIM2_MspDeInit 1 */
+  }
+}
+
+void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef* tim_baseHandle)
+{
+
+  if(tim_baseHandle->Instance==TIM6)
+  {
+  /* USER CODE BEGIN TIM6_MspDeInit 0 */
+
+  /* USER CODE END TIM6_MspDeInit 0 */
+    /* Peripheral clock disable */
+    __HAL_RCC_TIM6_CLK_DISABLE();
+
+    /* TIM6 interrupt Deinit */
+    HAL_NVIC_DisableIRQ(TIM6_IRQn);
+  /* USER CODE BEGIN TIM6_MspDeInit 1 */
+
+  /* USER CODE END TIM6_MspDeInit 1 */
+  }
+  else if(tim_baseHandle->Instance==TIM7)
+  {
+  /* USER CODE BEGIN TIM7_MspDeInit 0 */
+
+  /* USER CODE END TIM7_MspDeInit 0 */
+    /* Peripheral clock disable */
+    __HAL_RCC_TIM7_CLK_DISABLE();
+
+    /* TIM7 interrupt Deinit */
+    HAL_NVIC_DisableIRQ(TIM7_IRQn);
+  /* USER CODE BEGIN TIM7_MspDeInit 1 */
+
+  /* USER CODE END TIM7_MspDeInit 1 */
+  }
+}
+
+/* USER CODE BEGIN 1 */
+
+/* USER CODE END 1 */
+
