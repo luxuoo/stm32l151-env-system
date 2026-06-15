@@ -21,7 +21,9 @@ set(MX_Include_Dirs
 set(MX_Application_Src
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/main.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/gpio.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/dma.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/i2c.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/tim.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/usart.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/stm32l1xx_it.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/stm32l1xx_hal_msp.c
@@ -30,7 +32,6 @@ set(MX_Application_Src
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/XMF_OLED_STM32Cube.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/bh1750.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/app.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/tim.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../startup_stm32l151xb.s
 )
 
@@ -50,6 +51,8 @@ set(STM32_Drivers_Src
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Drivers/STM32L1xx_HAL_Driver/Src/stm32l1xx_hal_pwr_ex.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Drivers/STM32L1xx_HAL_Driver/Src/stm32l1xx_hal_cortex.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Drivers/STM32L1xx_HAL_Driver/Src/stm32l1xx_hal_exti.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Drivers/STM32L1xx_HAL_Driver/Src/stm32l1xx_hal_tim.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Drivers/STM32L1xx_HAL_Driver/Src/stm32l1xx_hal_tim_ex.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Drivers/STM32L1xx_HAL_Driver/Src/stm32l1xx_hal_uart.c
 )
 
