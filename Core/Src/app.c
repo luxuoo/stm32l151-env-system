@@ -9,7 +9,6 @@
 
 /* ---- Private variables ---- */
 static char oled_buf[32];
-static char uart_buf[48];
 static volatile uint32_t last_btn_tick = 0;
 static float g_current_lux = 0.0f;
 
