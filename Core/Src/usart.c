@@ -25,6 +25,7 @@
 /* USER CODE END 0 */
 
 UART_HandleTypeDef huart1;
+DMA_HandleTypeDef  hdma_usart1_tx;
 
 /* USART1 init function */
 
@@ -69,6 +70,8 @@ void HAL_UART_MspInit(UART_HandleTypeDef* uartHandle)
     __HAL_RCC_USART1_CLK_ENABLE();
 
     __HAL_RCC_GPIOA_CLK_ENABLE();
+    __HAL_RCC_DMA1_CLK_ENABLE();
+
     /**USART1 GPIO Configuration
     PA9     ------> USART1_TX
     PA10     ------> USART1_RX
@@ -79,6 +82,27 @@ void HAL_UART_MspInit(UART_HandleTypeDef* uartHandle)
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
     GPIO_InitStruct.Alternate = GPIO_AF7_USART1;
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+    /* USART1 DMA TX init */
+    hdma_usart1_tx.Instance                 = DMA1_Channel4;
+    hdma_usart1_tx.Init.Direction           = DMA_MEMORY_TO_PERIPH;
+    hdma_usart1_tx.Init.PeriphInc           = DMA_PINC_DISABLE;
+    hdma_usart1_tx.Init.MemInc              = DMA_MINC_ENABLE;
+    hdma_usart1_tx.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
+    hdma_usart1_tx.Init.MemDataAlignment    = DMA_MDATAALIGN_BYTE;
+    hdma_usart1_tx.Init.Mode                = DMA_NORMAL;
+    hdma_usart1_tx.Init.Priority            = DMA_PRIORITY_LOW;
+    HAL_DMA_Init(&hdma_usart1_tx);
+
+    __HAL_LINKDMA(uartHandle, hdmatx, hdma_usart1_tx);
+
+    /* DMA1 Channel4 NVIC */
+    HAL_NVIC_SetPriority(DMA1_Channel4_IRQn, 2, 0);
+    HAL_NVIC_EnableIRQ(DMA1_Channel4_IRQn);
+
+    /* USART1 NVIC */
+    HAL_NVIC_SetPriority(USART1_IRQn, 2, 1);
+    HAL_NVIC_EnableIRQ(USART1_IRQn);
 
   /* USER CODE BEGIN USART1_MspInit 1 */
 
@@ -103,6 +127,12 @@ void HAL_UART_MspDeInit(UART_HandleTypeDef* uartHandle)
     */
     HAL_GPIO_DeInit(GPIOA, GPIO_PIN_9|GPIO_PIN_10);
 
+    /* DMA deinit */
+    HAL_DMA_DeInit(uartHandle->hdmatx);
+
+    HAL_NVIC_DisableIRQ(DMA1_Channel4_IRQn);
+    HAL_NVIC_DisableIRQ(USART1_IRQn);
+
   /* USER CODE BEGIN USART1_MspDeInit 1 */
 
   /* USER CODE END USART1_MspDeInit 1 */
@@ -112,4 +142,3 @@ void HAL_UART_MspDeInit(UART_HandleTypeDef* uartHandle)
 /* USER CODE BEGIN 1 */
 
 /* USER CODE END 1 */
-

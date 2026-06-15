@@ -56,6 +56,7 @@
 /* USER CODE BEGIN 0 */
 
 /* USER CODE END 0 */
+
 /**
   * Initializes the Global MSP.
   */
@@ -73,6 +74,40 @@ void HAL_MspInit(void)
   /* System interrupt init*/
 
   /* USER CODE BEGIN MspInit 1 */
+  /* Configure button EXTI lines */
+  GPIO_InitTypeDef GPIO_InitStruct = {0};
+
+  /* Enable GPIO clocks */
+  __HAL_RCC_GPIOC_CLK_ENABLE();
+  __HAL_RCC_GPIOB_CLK_ENABLE();
+
+  /* PC13 — BTN_UP: External interrupt, falling edge, pull-up */
+  GPIO_InitStruct.Pin  = GPIO_PIN_13;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+
+  /* PB1 — BTN_DOWN: External interrupt, falling edge, pull-up */
+  GPIO_InitStruct.Pin  = GPIO_PIN_1;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+  /* PB5 — BTN_OK: External interrupt, falling edge, pull-up */
+  GPIO_InitStruct.Pin  = GPIO_PIN_5;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+  /* EXTI NVIC */
+  HAL_NVIC_SetPriority(EXTI1_IRQn, 1, 0);
+  HAL_NVIC_EnableIRQ(EXTI1_IRQn);
+
+  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 1, 1);
+  HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
+
+  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 1, 2);
+  HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 
   /* USER CODE END MspInit 1 */
 }

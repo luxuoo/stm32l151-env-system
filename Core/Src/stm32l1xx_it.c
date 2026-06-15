@@ -22,6 +22,7 @@
 #include "stm32l1xx_it.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "app.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -197,6 +198,63 @@ void SysTick_Handler(void)
 /* For the available peripheral interrupt handler names,                      */
 /* please refer to the startup file (startup_stm32l1xx.s).                    */
 /******************************************************************************/
+
+/**
+  * @brief This function handles EXTI line 1 interrupt.
+  */
+void EXTI1_IRQHandler(void)
+{
+  HAL_GPIO_EXTI_IRQHandler(BTN_DOWN_Pin);
+}
+
+/**
+  * @brief This function handles EXTI line[15:10] interrupts.
+  */
+void EXTI15_10_IRQHandler(void)
+{
+  HAL_GPIO_EXTI_IRQHandler(BTN_UP_Pin);
+}
+
+/**
+  * @brief This function handles EXTI line[9:5] interrupts.
+  */
+void EXTI9_5_IRQHandler(void)
+{
+  HAL_GPIO_EXTI_IRQHandler(BTN_OK_Pin);
+}
+
+/**
+  * @brief This function handles TIM6 global interrupt.
+  */
+void TIM6_IRQHandler(void)
+{
+  HAL_TIM_IRQHandler(&htim6);
+}
+
+/**
+  * @brief This function handles TIM7 global interrupt.
+  */
+void TIM7_IRQHandler(void)
+{
+  HAL_TIM_IRQHandler(&htim7);
+}
+
+/**
+  * @brief This function handles DMA1 channel4 global interrupt (USART1_TX).
+  */
+void DMA1_Channel4_IRQHandler(void)
+{
+  extern DMA_HandleTypeDef hdma_usart1_tx;
+  HAL_DMA_IRQHandler(&hdma_usart1_tx);
+}
+
+/**
+  * @brief This function handles USART1 global interrupt.
+  */
+void USART1_IRQHandler(void)
+{
+  HAL_UART_IRQHandler(&huart1);
+}
 
 /* USER CODE BEGIN 1 */
 

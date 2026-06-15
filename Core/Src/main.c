@@ -24,9 +24,8 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "XMF_OLED_STM32Cube.h"
-#include "bh1750.h"
-#include <stdio.h>
+#include "app.h"
+#include "tim.h"
 #include <string.h>
 /* USER CODE END Includes */
 
@@ -48,11 +47,7 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-uint16_t raw_val;
-uint16_t lux_int;    /* integer part */
-uint16_t lux_dec;    /* decimal part (x10) */
-char  oled_buf[32];
-char  uart_buf[48];
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -95,48 +90,24 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_USART1_UART_Init();
   MX_I2C2_Init();
-  /* USER CODE BEGIN 2 */
-  /* Initialize OLED display */
-  OLED_Init();
-  OLED_Clear();
-  OLED_ShowString(0, 0, (uint8_t *)"BH1750 Debug");
-  OLED_ShowString(0, 2, (uint8_t *)"Init...");
-  HAL_Delay(500);
+  MX_USART1_UART_Init();
+  MX_TIM2_Init();
+  MX_TIM6_Init();
+  MX_TIM7_Init();
 
-  /* Initialize BH1750 light sensor */
-  BH1750_Init(&hi2c2);
-  OLED_Clear();
-  OLED_ShowString(0, 0, (uint8_t *)"BH1750 Ready");
-  HAL_Delay(500);
+  /* USER CODE BEGIN 2 */
+  App_Init();
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-    /* Read raw 2-byte value from BH1750 */
-    raw_val = BH1750_ReadRaw(&hi2c2);
-
-    /* Convert to lux using integer math: raw / 1.2 = raw * 10 / 12 */
-    uint16_t lux_x10 = (uint16_t)((uint32_t)raw_val * 10 / 12);
-    lux_int = lux_x10 / 10;
-    lux_dec = lux_x10 % 10;
-
-    /* Display on OLED */
-    OLED_ShowString(0, 0, (uint8_t *)"BH1750 Sensor");
-    sprintf(oled_buf, "%d.%d lx    ", lux_int, lux_dec);
-    OLED_ShowString(0, 2, (uint8_t *)oled_buf);
-
-    /* Send via UART */
-    sprintf(uart_buf, "BH1750: %d.%d lx\r\n", lux_int, lux_dec);
-    HAL_UART_Transmit(&huart1, (uint8_t *)uart_buf, strlen(uart_buf), 200);
-
-    HAL_Delay(1000);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+    App_Loop();
   }
   /* USER CODE END 3 */
 }
