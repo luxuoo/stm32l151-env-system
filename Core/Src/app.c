@@ -20,7 +20,7 @@ volatile uint8_t       g_need_redraw = 1;
 volatile uint8_t       g_read_flag   = 0;
 volatile uint8_t       g_dim_flag    = 0;
 volatile uint8_t       g_uart_busy   = 0;
-volatile float         g_smooth_lux  = 999.0f;
+volatile float         g_smooth_lux  = 0.0f;
 volatile uint8_t       g_sensor_ok   = 0;
 volatile uint16_t      g_btn_event   = 0;
 
@@ -86,7 +86,7 @@ static void Sensor_Read(void)
         g_sensor_ok = 0; g_current_lux = 0.0f;
         if (g_sys_state == STATE_RUNNING) {
             g_sys_state = STATE_ERROR;
-            __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_4, 999);
+            __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_4, 0);  /* LED OFF */
             UART_SendString("SENSOR_DISCONNECT\r\n");
         }
         I2C2_Recover();
@@ -95,21 +95,22 @@ static void Sensor_Read(void)
 
 /* =========================================================
  *  Dimming (10ms tick)
- *  PWM1 + OCPOLARITY_LOW: CCR=999 → LED OFF, CCR=0 → LED ON
+ *  PWM1 + OCPOLARITY_LOW:
+ *    CCR=0   → output HIGH 100% → LED OFF
+ *    CCR=999 → output LOW  100% → LED ON (full)
  * ========================================================= */
 static void Dimming_Algorithm(void)
 {
     uint16_t target;
 
     if (!g_sensor_ok || g_sys_state != STATE_RUNNING) {
-        target = 999;
+        target = 0;          /* LED OFF */
     } else if (g_current_lux >= 300.0f) {
-        target = 999;
+        target = 0;          /* Bright enough, LED OFF */
     } else {
-        float ratio = g_current_lux / 300.0f;
-        target = (uint16_t)(999.0f * (1.0f - ratio));
-        /* Invert: PWM1+LOW polarity means lower CCR = brighter */
-        target = 999 - target;
+        /* Darker → higher CCR → brighter LED */
+        float ratio = g_current_lux / 300.0f;   /* 0~1 */
+        target = (uint16_t)(999.0f * (1.0f - ratio));  /* 0 lux→999, 300 lux→0 */
     }
 
     /* First-order lag filter α=0.05 */
@@ -170,7 +171,7 @@ void App_Init(void)
     g_menu_cursor = 0;
     g_need_redraw = 1;
     g_uart_busy   = 0;
-    g_smooth_lux  = 999.0f;
+    g_smooth_lux  = 0.0f;
     g_sensor_ok   = 0;
 
     /* Fix TIM6 to 10ms (CubeMX set it to 1s) */
@@ -244,12 +245,12 @@ static void Handle_ButtonPress(uint16_t pin)
         } else if (pin == BTN_OK_Pin) {
             if (g_menu_cursor == 0) {
                 g_sys_state  = STATE_RUNNING;
-                g_smooth_lux = 999.0f;
+                g_smooth_lux = 0.0f;
                 g_sensor_ok  = 0;
                 g_read_flag  = 1;
                 BH1750_Init(&hi2c2);
                 HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_4);
-                __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_4, 999);
+                __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_4, 0);  /* LED OFF initially */
                 HAL_TIM_Base_Start_IT(&htim6);
                 HAL_TIM_Base_Start_IT(&htim7);
                 OLED_Clear();
