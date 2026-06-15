@@ -28,6 +28,7 @@ extern volatile uint8_t        g_dim_flag;
 extern volatile uint8_t        g_uart_busy;
 extern volatile float          g_smooth_lux;
 extern volatile uint8_t        g_sensor_ok;
+extern volatile uint16_t       g_btn_event;     /* button pin that was pressed */
 
 /* ---- Functions ---- */
 void App_Init(void);

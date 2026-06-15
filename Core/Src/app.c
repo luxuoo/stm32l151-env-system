@@ -9,6 +9,7 @@
 
 /* ---- Private variables ---- */
 static char oled_buf[32];
+static void Handle_ButtonPress(uint16_t pin);
 static volatile uint32_t last_btn_tick = 0;
 static float g_current_lux = 0.0f;
 
@@ -21,6 +22,7 @@ volatile uint8_t       g_dim_flag    = 0;
 volatile uint8_t       g_uart_busy   = 0;
 volatile float         g_smooth_lux  = 999.0f;
 volatile uint8_t       g_sensor_ok   = 0;
+volatile uint16_t      g_btn_event   = 0;
 
 /* =========================================================
  *  UART DMA transmit
@@ -193,6 +195,13 @@ void App_Init(void)
  * ========================================================= */
 void App_Loop(void)
 {
+    /* Process button event (set in EXTI callback, processed here) */
+    if (g_btn_event) {
+        uint16_t pin = g_btn_event;
+        g_btn_event = 0;
+        Handle_ButtonPress(pin);
+    }
+
     if (g_read_flag && g_sys_state == STATE_RUNNING) {
         g_read_flag = 0;
         Sensor_Read();
@@ -285,8 +294,9 @@ static void Handle_ButtonPress(uint16_t pin)
  * ========================================================= */
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
+    /* Fast: only set flag, process in main loop */
     if (GPIO_Pin == BTN_UP_Pin || GPIO_Pin == BTN_DOWN_Pin || GPIO_Pin == BTN_OK_Pin)
-        Handle_ButtonPress(GPIO_Pin);
+        g_btn_event = GPIO_Pin;
 }
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
